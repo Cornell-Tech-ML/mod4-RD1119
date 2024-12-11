@@ -35,7 +35,7 @@ class Conv1d(minitorch.Module):
 
     def forward(self, input):
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        return minitorch.conv1d(input, self.weights.value) + self.bias.value
 
 
 class CNNSentimentKim(minitorch.Module):
@@ -61,15 +61,27 @@ class CNNSentimentKim(minitorch.Module):
     ):
         super().__init__()
         self.feature_map_size = feature_map_size
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.conv1d1 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[0])
+        self.conv1d2 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[1])
+        self.conv1d3 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[2])
+        self.dropout_rate = dropout
+        self.fc = Linear(self.feature_map_size, 1)
 
     def forward(self, embeddings):
         """
         embeddings tensor: [batch x sentence length x embedding dim]
         """
         # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        embeddings = embeddings.permute(0, 2, 1)
+        conv1 = self.conv1d1.forward(embeddings).relu()
+        conv2 = self.conv1d2.forward(embeddings).relu()
+        conv3 = self.conv1d3.forward(embeddings).relu()
+        out = (
+            minitorch.max(conv1, 2) + minitorch.max(conv2, 2) + minitorch.max(conv3, 2)
+        ).view(embeddings.shape[0], self.feature_map_size)
+        out = minitorch.dropout(out, rate=self.dropout_rate)
+        out = self.fc.forward(out)
+        return out.sigmoid().view(embeddings.shape[0])
 
 
 # Evaluation helper methods
@@ -255,8 +267,8 @@ def encode_sentiment_data(dataset, pretrained_embeddings, N_train, N_val=0):
 if __name__ == "__main__":
     train_size = 450
     validation_size = 100
-    learning_rate = 0.01
-    max_epochs = 250
+    learning_rate = 0.008
+    max_epochs = 35
 
     (X_train, y_train), (X_val, y_val) = encode_sentiment_data(
         load_dataset("glue", "sst2"),
