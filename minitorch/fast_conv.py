@@ -100,26 +100,24 @@ def _tensor_conv1d(
     s2 = weight_strides
 
     # TODO: Implement for Task 4.1.
-    for b in prange(batch):
-        for c_out in prange(out_channels):
-            for i in prange(out_width):
+    for a in prange(batch):
+        for b in prange(out_channels):
+            for c in prange(out_width):
                 accumulator = 0.0
                 out_ordinal = (
-                    b * out_strides[0] + c_out * out_strides[1] + i * out_strides[2]
+                    a * out_strides[0] + b * out_strides[1] + c * out_strides[2]
                 )
 
                 for c_in in prange(in_channels):
                     if reverse:
-                        start_idx = max(i - kw + 1, 0)
-                        end_idx = min(i + 1, width)
+                        start_idx = max(c - kw + 1, 0)
+                        end_idx = min(c + 1, width)
                     else:
-                        start_idx = max(i, 0)
-                        end_idx = min(i + kw, width)
+                        start_idx = max(c, 0)
+                        end_idx = min(c + kw, width)
                     for k in prange(start_idx, end_idx):
-                        weight_idx = (
-                            c_out * s2[0] + c_in * s2[1] + (k - start_idx) * s2[2]
-                        )
-                        input_idx = b * s1[0] + c_in * s1[1] + k * s1[2]
+                        weight_idx = b * s2[0] + c_in * s2[1] + (k - start_idx) * s2[2]
+                        input_idx = a * s1[0] + c_in * s1[1] + k * s1[2]
                         accumulator += input[input_idx] * weight[weight_idx]
                 out[out_ordinal] = accumulator
 
@@ -265,14 +263,14 @@ def _tensor_conv2d(
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
 
     # TODO: Implement for Task 4.2.
-    for b in prange(batch):
-        for c_out in prange(out_channels):
+    for a in prange(batch):
+        for b in prange(out_channels):
             for i in prange(out_shape[2]):
                 for j in prange(out_shape[3]):
                     accumulator = 0.0
                     out_idx = (
-                        b * out_strides[0]
-                        + c_out * out_strides[1]
+                        a * out_strides[0]
+                        + b * out_strides[1]
                         + i * out_strides[2]
                         + j * out_strides[3]
                     )
@@ -292,12 +290,12 @@ def _tensor_conv2d(
                         for k_h in prange(start_h, end_h):
                             for k_w in prange(start_w, end_w):
                                 weight_idx = (
-                                    c_out * s20
+                                    b * s20
                                     + c_in * s21
                                     + (k_h - start_h) * s22
                                     + (k_w - start_w) * s23
                                 )
-                                input_idx = b * s10 + c_in * s11 + k_h * s12 + k_w * s13
+                                input_idx = a * s10 + c_in * s11 + k_h * s12 + k_w * s13
                                 accumulator += input[input_idx] * weight[weight_idx]
                     out[out_idx] = accumulator
 

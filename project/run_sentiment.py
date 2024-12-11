@@ -61,11 +61,11 @@ class CNNSentimentKim(minitorch.Module):
     ):
         super().__init__()
         self.feature_map_size = feature_map_size
-        self.conv1d1 = Conv1d(embedding_size, feature_map_size, filter_sizes[0])
-        self.conv1d2 = Conv1d(embedding_size, feature_map_size, filter_sizes[1])
-        self.conv1d3 = Conv1d(embedding_size, feature_map_size, filter_sizes[2])
-        self.dropout = dropout
-        self.linear = Linear(self.feature_map_size, 1)
+        self.conv1d1 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[0])
+        self.conv1d2 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[1])
+        self.conv1d3 = Conv1d(in_channels=embedding_size, out_channels=feature_map_size, kernel_width=filter_sizes[2])
+        self.dropout_rate = dropout
+        self.fc = Linear(self.feature_map_size, 1)
 
     def forward(self, embeddings):
         """
@@ -79,8 +79,8 @@ class CNNSentimentKim(minitorch.Module):
         out = (
             minitorch.max(conv1, 2) + minitorch.max(conv2, 2) + minitorch.max(conv3, 2)
         ).view(embeddings.shape[0], self.feature_map_size)
-        out = minitorch.dropout(out, rate=self.dropout)
-        out = self.linear.forward(out)
+        out = minitorch.dropout(out, rate=self.dropout_rate)
+        out = self.fc.forward(out)
         return out.sigmoid().view(embeddings.shape[0])
 
 
@@ -267,8 +267,8 @@ def encode_sentiment_data(dataset, pretrained_embeddings, N_train, N_val=0):
 if __name__ == "__main__":
     train_size = 450
     validation_size = 100
-    learning_rate = 0.01
-    max_epochs = 30
+    learning_rate = 0.008
+    max_epochs = 35
 
     (X_train, y_train), (X_val, y_val) = encode_sentiment_data(
         load_dataset("glue", "sst2"),

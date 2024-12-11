@@ -80,15 +80,16 @@ def argmax(input: Tensor, dim: int) -> Tensor:
 class Max(Function):
     @staticmethod
     def forward(ctx: Context, input: Tensor, dim: Tensor) -> Tensor:
-        """Forward of max should be max reduction"""
+        """Forward of max is max reduction"""
         ctx.save_for_backward(input, dim)
         return max_reduce(input, int(dim.item()))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
-        """Backward of max should be argmax (see above)"""
+        """Backward of max is argmax"""
         input, dim = ctx.saved_values
-        return (argmax(input, int(dim.item())) * grad_output, dim)
+        out = argmax(input, int(dim.item())) * grad_output
+        return (out, dim)
 
 
 def max(input: Tensor, dim: int) -> Tensor:
